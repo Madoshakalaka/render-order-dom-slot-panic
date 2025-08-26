@@ -1,10 +1,6 @@
-use bounce::{BounceRoot, helmet::HelmetBridge};
 use glam::Vec2;
 use petgraph::Graph;
-use stylist::{manager::StyleManager, yew::ManagerProvider};
-use yew::{html::PhantomComponent, prelude::*, Properties};
-#[cfg(not(target_arch = "wasm32"))]
-use {crate::DeviceInfo, bounce::helmet::StaticWriter, crate::SupportedLanguage};
+use yew::{prelude::*, Properties};
 
 #[derive(Default, Clone, Debug)]
 pub struct Rects {
@@ -15,8 +11,16 @@ impl PartialEq for Rects {
     fn eq(&self, other: &Self) -> bool {
         let a_ns = self.g.raw_nodes().iter().map(|n| &n.weight);
         let b_ns = other.g.raw_nodes().iter().map(|n| &n.weight);
-        let a_es = self.g.raw_edges().iter().map(|e| (e.source(), e.target(), &e.weight));
-        let b_es = other.g.raw_edges().iter().map(|e| (e.source(), e.target(), &e.weight));
+        let a_es = self
+            .g
+            .raw_edges()
+            .iter()
+            .map(|e| (e.source(), e.target(), &e.weight));
+        let b_es = other
+            .g
+            .raw_edges()
+            .iter()
+            .map(|e| (e.source(), e.target(), &e.weight));
         a_ns.eq(b_ns) && a_es.eq(b_es)
     }
 }
@@ -51,13 +55,14 @@ pub fn Rect(props: &RectProps) -> Html {
 
     let transform = format!("translate({} {}) rotate({})", my_x, my_y, angle);
 
-    // somehow removing the handler fixes the dom slot bug
-    let oncontextmenu = Callback::from(|e: MouseEvent| {
-        e.prevent_default();
-    });
-
     html! {
-        <rect x=0 y={( -width/2.0 ).to_string()} width={length.to_string()} height={width.to_string()} transform={transform} {oncontextmenu} />
+        <rect
+            x=0
+            y={( -width/2.0 ).to_string()}
+            width={length.to_string()}
+            height={width.to_string()}
+            transform={transform}
+        />
     }
 }
 
@@ -80,14 +85,23 @@ pub struct HomePageProps {
 pub fn HomePage(props: &HomePageProps) -> Html {
     let graph = &props.graph;
     // Group edges by node pairs to detect double edges
-    let mut edge_pairs: std::collections::HashMap<(petgraph::graph::NodeIndex, petgraph::graph::NodeIndex), Vec<petgraph::graph::EdgeIndex>> =
-        std::collections::HashMap::new();
+    let mut edge_pairs: std::collections::HashMap<
+        (petgraph::graph::NodeIndex, petgraph::graph::NodeIndex),
+        Vec<petgraph::graph::EdgeIndex>,
+    > = std::collections::HashMap::new();
 
     for edge_idx in graph.g.edge_indices() {
         let (source, target) = graph.g.edge_endpoints(edge_idx).unwrap();
         // Normalize the pair so (A,B) and (B,A) are treated as the same
-        let key = if source < target { (source, target) } else { (target, source) };
-        edge_pairs.entry(key).or_insert_with(Vec::new).push(edge_idx);
+        let key = if source < target {
+            (source, target)
+        } else {
+            (target, source)
+        };
+        edge_pairs
+            .entry(key)
+            .or_insert_with(Vec::new)
+            .push(edge_idx);
     }
 
     let edges = edge_pairs.into_iter().map(|(_, edge_indices)| {
@@ -104,17 +118,20 @@ pub fn HomePage(props: &HomePageProps) -> Html {
         let target_label = t.label.clone();
         let key = format!("{}-{}", source_label, target_label);
 
-        let (source_node_coordinates, target_node_coordinates) = arrow_endpoints(s_coords, t_coords, NODE_RADIUS);
+        let (source_node_coordinates, target_node_coordinates) =
+            arrow_endpoints(s_coords, t_coords, NODE_RADIUS);
 
         html! {
-            <Rect key={key} source_node_coordinates={source_node_coordinates} target_node_coordinates={target_node_coordinates} />
+            <Rect
+                key={key}
+                source_node_coordinates={source_node_coordinates}
+                target_node_coordinates={target_node_coordinates}
+            />
         }
     });
 
     // peculiar: removing the onpointerdown handler here seems to fix the dom slot bug
-    html! {
-        <svg xmlns="http://www.w3.org/2000/svg" onpointerdown={|_|{}}>{ for edges }</svg>
-    }
+    html! { <svg xmlns="http://www.w3.org/2000/svg">{ for edges }</svg> }
 }
 
 pub fn create_triangle_graph() -> petgraph::Graph<FooNode, ()> {
@@ -136,71 +153,29 @@ pub fn create_triangle_graph() -> petgraph::Graph<FooNode, ()> {
         y: 75.0,
     });
     // form a loop
-    graph.add_edge(petgraph::graph::NodeIndex::new(0), petgraph::graph::NodeIndex::new(1), ());
-    graph.add_edge(petgraph::graph::NodeIndex::new(1), petgraph::graph::NodeIndex::new(2), ());
-    graph.add_edge(petgraph::graph::NodeIndex::new(2), petgraph::graph::NodeIndex::new(0), ());
+    graph.add_edge(
+        petgraph::graph::NodeIndex::new(0),
+        petgraph::graph::NodeIndex::new(1),
+        (),
+    );
+    graph.add_edge(
+        petgraph::graph::NodeIndex::new(1),
+        petgraph::graph::NodeIndex::new(2),
+        (),
+    );
+    graph.add_edge(
+        petgraph::graph::NodeIndex::new(2),
+        petgraph::graph::NodeIndex::new(0),
+        (),
+    );
     graph
 }
 
 #[function_component]
-pub fn NavAndMain() -> Html {
-    let graph = use_state(|| Rects { g: create_triangle_graph() });
-
-    html! {
-        <HomePage graph={graph} />
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Properties, PartialEq)]
-pub struct ServerAppProps {
-    pub h_writer: StaticWriter,
-    pub manager: StyleManager,
-    pub device_info: Option<DeviceInfo>,
-    pub presenting_language: SupportedLanguage,
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-#[function_component]
-pub fn ServerApp(props: &ServerAppProps) -> Html {
-    html! {
-        <BounceRoot>
-            <ContextProvider<SupportedLanguage> context={props.presenting_language}>
-                <ContextProvider<Option<DeviceInfo>> context={props.device_info}>
-                    <ManagerProvider manager={props.manager.clone()}>
-                        <NavAndMain />
-                    </ManagerProvider>
-                </ContextProvider<Option<DeviceInfo>>>
-            </ContextProvider<SupportedLanguage>>
-            <HelmetBridge default_title="Cognet" writer={props.h_writer.clone()} />
-        </BounceRoot>
-    }
-}
-
-#[function_component]
 pub fn App() -> Html {
-    let style_mgr = (*use_memo((), |_| StyleManager::new().expect("failed to create style manager."))).to_owned();
+    let graph = use_state(|| Rects {
+        g: create_triangle_graph(),
+    });
 
-    html! {
-        <BounceRoot>
-            <PhantomComponent<FakeSupportedLanguage>>
-                <PhantomComponent<FakeDeviceInfo>>
-                    <ManagerProvider manager={style_mgr}>
-                        <NavAndMain />
-                    </ManagerProvider>
-                </PhantomComponent<FakeDeviceInfo>>
-            </PhantomComponent<FakeSupportedLanguage>>
-            <HelmetBridge default_title="Cognet" />
-        </BounceRoot>
-    }
-}
-
-#[function_component]
-fn FakeDeviceInfo() -> Html {
-    html! {}
-}
-
-#[function_component]
-fn FakeSupportedLanguage() -> Html {
-    html! {}
+    html! { <HomePage graph={graph} /> }
 }
