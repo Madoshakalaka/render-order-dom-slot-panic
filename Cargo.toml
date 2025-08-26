@@ -1,0 +1,52 @@
+[workspace]
+members = [
+    "frontend",
+    "backend",
+]
+resolver = "2"
+
+[patch.crates-io]
+# yew = {git = "https://github.com/yewstack/yew.git"}
+yew = {git = "https://github.com/yewstack/yew", branch = "master"}
+# yew = { path = "../yew/packages/yew" }
+# [patch."https://github.com/yewstack/yew.git"]
+# # yew = {git = "https://github.com/yewstack/yew", branch = "fix-non-lowercase-hydration"}
+# yew = {git = "https://github.com/yewstack/yew", branch = "master"}
+
+
+[profile.release]
+# optimization over all codebase ( better optimization, slower build )
+codegen-units = 1
+# link time optimization using using whole-program analysis
+lto = true
+# less code to include into binary
+# panic = 'abort'
+
+[profile.release.package.frontend]
+# optimization for size ( more aggressive )
+opt-level = 'z'
+# optimization for size
+# opt-level = 's'
+
+[profile.release.package.backend]
+opt-level = 1
+
+[profile.dev]
+opt-level = 'z'
+
+[workspace.dependencies]
+bounce = { git="https://github.com/Madoshakalaka/bounce.git", branch="master" }
+rand = { version = "0.9.0" }
+yew = { version="0.21" }
+yew-shortcuts = { git = "https://github.com/Madoshakalaka/yew-shortcuts.git", branch="master" }
+petgraph = { version = "0.8.1", features = ["serde-1"] }
+urlencoding = "2.1.3"
+http = "1.0.0"
+thiserror = "2.0.11"
+tokio = { version = "1.34.0"  }
+gloo-utils = "0.2.0"
+web-sys = "0.3.69"
+wasm-bindgen = "0.2.100"
+tracing = "0.1.40"
+glam = { version = "0.29.2" }
+

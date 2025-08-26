@@ -1,0 +1,19 @@
+[package]
+name = "backend"
+edition = "2021"
+publish = false
+
+[dependencies]
+frontend = { path = "../frontend" }
+accept-language = "3.1"
+anyhow = "1.0.75"
+axum = { version = "0.7", features = [] }
+axum-server = "0.7.1"
+bounce = { workspace = true, features = ["ssr", "helmet"] }
+http = { workspace = true }
+stylist = { git = "https://github.com/WorldSEnder/stylist.git", branch = "name-lint", features = ["yew_integration", "ssr"] }
+mime_guess = "2.0"
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.18" }
+yew = { workspace = true, features = ["ssr"] }

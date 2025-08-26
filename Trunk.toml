@@ -1,0 +1,6 @@
+[build]
+target = "frontend/index.html"
+dist = "frontend/dist"
+
+[tools]
+wasm_opt = "version_123"
