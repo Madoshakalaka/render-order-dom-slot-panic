@@ -12,8 +12,7 @@ and then
 PORT=8080 cargo run -p backend
 ```
 
-
-visiting the website will panic with the following error:
+The website will panic with the following error:
 
 ```
  INFO scheduler_loop:render{component.id=9}: frontend::app: Rendering edge from NodeIndex(2) to NodeIndex(0)

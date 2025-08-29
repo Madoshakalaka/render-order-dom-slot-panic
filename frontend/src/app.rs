@@ -76,21 +76,16 @@ pub(crate) fn arrow_endpoints(origin_0: Vec2, origin_1: Vec2, node_radius: f32) 
     (s, t)
 }
 
-#[derive(Properties, PartialEq)]
-pub struct HomePageProps {
-    pub graph: UseStateHandle<Rects>,
-}
-
 #[function_component]
-pub fn HomePage(props: &HomePageProps) -> Html {
-    let graph = &props.graph;
+pub fn HomePage() -> Html {
+    let graph = create_triangle_graph();
 
-    let edges = graph.g.edge_indices().map(|edge_idx| {
-        let (source, target) = graph.g.edge_endpoints(edge_idx).unwrap();
+    let edges = graph.edge_indices().map(|edge_idx| {
+        let (source, target) = graph.edge_endpoints(edge_idx).unwrap();
         tracing::info!("Rendering edge from {:?} to {:?}", source, target);
 
-        let s = &graph.g[source];
-        let t = &graph.g[target];
+        let s = &graph[source];
+        let t = &graph[target];
 
         let s_coords = Vec2::new(s.x, s.y);
         let t_coords = Vec2::new(t.x, t.y);
@@ -111,7 +106,6 @@ pub fn HomePage(props: &HomePageProps) -> Html {
         }
     });
 
-    // peculiar: removing the onpointerdown handler here seems to fix the dom slot bug
     html! { <svg xmlns="http://www.w3.org/2000/svg">{ for edges }</svg> }
 }
 
@@ -154,9 +148,5 @@ pub fn create_triangle_graph() -> petgraph::Graph<FooNode, ()> {
 
 #[function_component]
 pub fn App() -> Html {
-    let graph = use_state(|| Rects {
-        g: create_triangle_graph(),
-    });
-
-    html! { <HomePage graph={graph} /> }
+    html! { <HomePage /> }
 }

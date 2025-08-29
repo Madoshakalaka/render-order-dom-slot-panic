@@ -31,8 +31,6 @@ async fn http_server(app: Router, port: u16) {
 
 async fn handler(request: Request) -> Response {
     let path = request.uri().path();
-    let headers = request.headers();
-
     // Serve static assets from filesystem
     if let Some(content) = serve_static_asset(path).await {
         return content;
