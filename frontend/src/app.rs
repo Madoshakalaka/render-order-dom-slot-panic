@@ -76,22 +76,17 @@ pub(crate) fn arrow_endpoints(origin_0: Vec2, origin_1: Vec2, node_radius: f32) 
     (s, t)
 }
 
-#[derive(Properties, PartialEq)]
-pub struct HomePageProps {
-    pub graph: UseStateHandle<Rects>,
-}
-
 #[function_component]
-pub fn HomePage(props: &HomePageProps) -> Html {
-    let graph = &props.graph;
+pub fn HomePage() -> Html {
+    let graph = create_triangle_graph();
     // Group edges by node pairs to detect double edges
     let mut edge_pairs: std::collections::HashMap<
         (petgraph::graph::NodeIndex, petgraph::graph::NodeIndex),
         Vec<petgraph::graph::EdgeIndex>,
     > = std::collections::HashMap::new();
 
-    for edge_idx in graph.g.edge_indices() {
-        let (source, target) = graph.g.edge_endpoints(edge_idx).unwrap();
+    for edge_idx in graph.edge_indices() {
+        let (source, target) = graph.edge_endpoints(edge_idx).unwrap();
         // Normalize the pair so (A,B) and (B,A) are treated as the same
         let key = if source < target {
             (source, target)
@@ -105,11 +100,11 @@ pub fn HomePage(props: &HomePageProps) -> Html {
     }
 
     let edges = edge_pairs.into_iter().map(|(_, edge_indices)| {
-        let (source, target) = graph.g.edge_endpoints(edge_indices[0]).unwrap();
+        let (source, target) = graph.edge_endpoints(edge_indices[0]).unwrap();
         tracing::info!("Rendering edge from {:?} to {:?}", source, target);
 
-        let s = &graph.g[source];
-        let t = &graph.g[target];
+        let s = &graph[source];
+        let t = &graph[target];
 
         let s_coords = Vec2::new(s.x, s.y);
         let t_coords = Vec2::new(t.x, t.y);
@@ -130,7 +125,6 @@ pub fn HomePage(props: &HomePageProps) -> Html {
         }
     });
 
-    // peculiar: removing the onpointerdown handler here seems to fix the dom slot bug
     html! { <svg xmlns="http://www.w3.org/2000/svg">{ for edges }</svg> }
 }
 
@@ -173,9 +167,5 @@ pub fn create_triangle_graph() -> petgraph::Graph<FooNode, ()> {
 
 #[function_component]
 pub fn App() -> Html {
-    let graph = use_state(|| Rects {
-        g: create_triangle_graph(),
-    });
-
-    html! { <HomePage graph={graph} /> }
+    html! { <HomePage /> }
 }

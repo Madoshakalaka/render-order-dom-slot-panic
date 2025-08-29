@@ -5,7 +5,7 @@ use tracing_web::MakeWebConsoleWriter;
 fn main() {
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_ansi(true)
-        .without_time() // std::time is not available in browsers, see note below
+        .without_time()
         .with_writer(MakeWebConsoleWriter::new())
         .with_filter(Targets::new().with_default(tracing::Level::TRACE));
     let sub = tracing_subscriber::registry().with(fmt_layer);
